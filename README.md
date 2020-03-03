@@ -13,7 +13,7 @@ In this section, the goal was to find and explore an open source of data and fin
 In the visualization section, the task was to use this report and story to come up with a visualization that could show the story and aid in the explanation.  
 [Shiny App](https://npennell.shinyapps.io/ChrisSaleProject/)  
 [Report](https://github.com/Npennell96/Chris-Sale-Project/blob/master/Visualisation/Report.pdf)  
-[Shiny App Code] **need link**
+[Shiny App Code](https://github.com/Npennell96/Chris-Sale-Project/blob/master/Visualisation/app.R)
 
 <br>
 <br>
