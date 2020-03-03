@@ -1,0 +1,681 @@
+---
+title: "FIT5147 Data Exploration Project"
+subtitle: "Chris Sale Pitch Analysis"
+author: "Nicholas Pennell, 30338913"
+output:
+  prettydoc::html_pretty:
+    toc: TRUE
+    toc_depth: 2
+    theme: tactile
+    highlight: github
+---
+
+```{r packages, message=FALSE, warning=FALSE, include=FALSE}
+
+  library(pitchRx) # data pack
+  library(RSQLite) # loading in data of c drive
+  library(readr) # read in files
+  library(dplyr) # cleaing data
+  library(tidyr) # cleaning data
+  library(forcats) # cleaning data
+  library(lubridate) # cleaing dates
+  library(outliers) # outliers
+  library(corrplot) # correlation plot
+  library(RColorBrewer) # colour package
+  library(viridis) # colour package
+  library(ggplot2) # plots
+  library(kableExtra) # html tabel
+  library(ggthemes) # plot themes
+  library(tinytex) # knit to pdf
+  library(knitr) # kniting
+  library(prettydoc) # rmarkdown theme
+
+```
+
+## Introduction
+
+I'm a sports fan. I like them all, football, cricket, curling, you name it I'll probably watch it. Baseball is a great sport for anyone that likes to take a deep dive into the numbers behind the sport, which I most definitely do. This is due to the shear amount of information and metrics used in the sport, you just need to know where to look.
+  
+For this data exploration project, baseball data was taken from the start of the 2010 Major League Baseball (MLB) season all the way up to the end of the regular season in 2018. This data well be used to examine one pitcher, Chris Sale. The goal being to explore,  
+  
+  1.  what type of pitches does Sale throw and how has this changed over time,
+  2.  and, the location of these pitches.
+  
+## Data Wrangling
+The data wrangling process is split into several steps   
+  
+  + **Get**: Sourcing the data and reading it into in R,
+  + **Understand**: Add any new variable, examine and alternating variables, and make sure its clear what each variable is.  
+  + **Tidy**: Make sure the data is the right format to be explored. This is completed with several packages, `dplyr`, `tidyr`, `lubridate` and `RSQLite`.  
+  
+### Get
+  
+The data comes from the `pitchRx` R package. The package has a function that scrapes MLB Statcast. MLB Statcast allows people to gain access to accurate and high-level stats which are tracked by in stadium cameras in the PITCHf/x system.
+  
+The scarping function requires two dates, start and end date, and then takes all Statcast data between the dates and compiles it all into 5 tables, at bat, pitches, action, po, runner. For my use I split the data into years and save each year as an SQLite database, using the `RSQLite` package, and then extracts it from there each time it is used.
+  
+For each year the two wanted tables, pitch and at bat, with the wanted column variables are extracted and saved as data frames. The two tables are then joined based on two identifying variables. The data is then filtered to just take pitches thrown by Sale. This is repeated for each year, and then joined to make one finale set of data.
+   
+```{r loading data, warning=FALSE, message=FALSE, include=FALSE}
+
+  database.2010 <- src_sqlite("C:/Data/Baseball/pitchRx 2010.sqlite3", create = FALSE)
+  database.2011 <- src_sqlite("C:/Data/Baseball/pitchRx 2011.sqlite3", create = FALSE)
+  database.2012 <- src_sqlite("C:/Data/Baseball/pitchRx 2012.sqlite3", create = FALSE)
+  database.2013 <- src_sqlite("C:/Data/Baseball/pitchRx 2013.sqlite3", create = FALSE)
+  database.2014 <- src_sqlite("C:/Data/Baseball/pitchRx 2014.sqlite3", create = FALSE)
+  database.2015 <- src_sqlite("C:/Data/Baseball/pitchRx 2015.sqlite3", create = FALSE)
+  database.2016 <- src_sqlite("C:/Data/Baseball/pitchRx 2016.sqlite3", create = FALSE)
+  database.2017 <- src_sqlite("C:/Data/Baseball/pitchRx 2017.sqlite3", create = FALSE)
+  database.2018 <- src_sqlite("C:/Data/Baseball/pitchRx 2018.sqlite3", create = FALSE)
+  
+```
+
+```{r formating, warning=FALSE, message=FALSE, include=FALSE}
+
+# 2010
+  # pitch table
+    pitches.2010 <- tbl(database.2010, "pitch") %>% as.data.frame()
+    pitches.2010 <- pitches.2010[ , c(1, 3, 4, 10, 16, 17, 31, 30, 33 ,42:47)]
+  # atbat table
+    atbat.2010 <- tbl(database.2010, "atbat") %>% as.data.frame()
+    atbat.2010 <- atbat.2010[ , c(1, 2, 3, 6, 9, 11, 12, 14, 16, 17, 19, 20, 24, 25, 27, 28)]
+  # merge
+    total.2010 <- inner_join(pitches.2010, atbat.2010, by = c("num", "gameday_link"))
+  # filter
+    chris.sale.2010 <- total.2010 %>% filter(pitcher_name == "Chris Sale")
+
+# 2011
+  # pitch table
+    pitches.2011 <- tbl(database.2011, "pitch") %>% as.data.frame()
+    pitches.2011 <- pitches.2011[ , c(1, 3, 4, 10, 16, 17, 31, 30, 33 ,42:47)]
+  # atbat table
+    atbat.2011 <- tbl(database.2011, "atbat") %>% as.data.frame()
+    atbat.2011 <- atbat.2011[ , c(1, 2, 3, 6, 9, 11, 12, 14, 16, 17, 19, 20, 24, 25, 27, 28)]
+  # merge
+    total.2011 <- inner_join(pitches.2011, atbat.2011, by = c("num", "gameday_link"))
+  # filter
+    chris.sale.2011 <- total.2011 %>% filter(pitcher_name == "Chris Sale")
+
+# 2012
+  # pitch table
+    pitches.2012 <- tbl(database.2012, "pitch") %>% as.data.frame()
+    pitches.2012 <- pitches.2012[ , c(1, 3, 4, 10, 16, 17, 31, 30, 33 ,42:47)]
+  # atbat table
+    atbat.2012 <- tbl(database.2012, "atbat") %>% as.data.frame()
+    atbat.2012 <- atbat.2012[ , c(1, 2, 3, 6, 9, 11, 12, 14, 16, 17, 19, 20, 24, 25, 27, 28)]
+  # merge
+    total.2012 <- inner_join(pitches.2012, atbat.2012, by = c("num", "gameday_link"))
+  # filter
+    chris.sale.2012 <- total.2012 %>% filter(pitcher_name == "Chris Sale")
+    
+# 2013
+  # pitch table
+    pitches.2013 <- tbl(database.2013, "pitch") %>% as.data.frame()
+    pitches.2013 <- pitches.2013[ , c(1, 3, 4, 10, 16, 17, 31, 30, 33 ,42:47)]
+  # atbat table
+    atbat.2013 <- tbl(database.2013, "atbat") %>% as.data.frame()
+    atbat.2013 <- atbat.2013[ , c(1, 2, 3, 6, 9, 11, 12, 14, 16, 17, 19, 20, 24, 25, 27, 28)]
+  # merge
+    total.2013 <- inner_join(pitches.2013, atbat.2013, by = c("num", "gameday_link"))
+  # filter
+    chris.sale.2013 <- total.2013 %>% filter(pitcher_name == "Chris Sale")
+  
+# 2014
+  # pitch table
+    pitches.2014 <- tbl(database.2014, "pitch") %>% as.data.frame()
+    pitches.2014 <- pitches.2014[ , c(1, 3, 4, 10, 16, 17, 31, 30, 33 ,42:47)]
+  # atbat table
+    atbat.2014 <- tbl(database.2014, "atbat") %>% as.data.frame()
+    atbat.2014 <- atbat.2014[ , c(1, 2, 3, 6, 9, 11, 12, 14, 16, 17, 19, 20, 24, 25, 27, 28)]
+  # merge
+    total.2014 <- inner_join(pitches.2014, atbat.2014, by = c("num", "gameday_link"))
+  # filter
+    chris.sale.2014 <- total.2014 %>% filter(pitcher_name == "Chris Sale")
+    
+# 2015
+  # pitch table
+    pitches.2015 <- tbl(database.2015, "pitch") %>% as.data.frame()
+    pitches.2015 <- pitches.2015[ , c(1, 3, 4, 10, 16, 17, 31, 30, 33 ,42:47)]
+  # atbat table
+    atbat.2015 <- tbl(database.2015, "atbat") %>% as.data.frame()
+    atbat.2015 <- atbat.2015[ , c(1, 2, 3, 6, 9, 11, 12, 14, 16, 17, 19, 20, 24, 25, 27, 28)]
+  # merge
+    total.2015 <- inner_join(pitches.2015, atbat.2015, by = c("num", "gameday_link"))
+  # filter
+    chris.sale.2015 <- total.2015 %>% filter(pitcher_name == "Chris Sale")
+    
+# 2016
+  # pitch table
+    pitches.2016 <- tbl(database.2016, "pitch") %>% as.data.frame()
+    pitches.2016 <- pitches.2016[ , c(1, 3, 4, 10, 16, 17, 31, 30, 33 ,42:47)]
+  # atbat table
+    atbat.2016 <- tbl(database.2016, "atbat") %>% as.data.frame()
+    atbat.2016 <- atbat.2016[ , c(1, 2, 3, 6, 9, 11, 12, 14, 16, 17, 19, 20, 24, 25, 27, 28)]
+  # merge
+    total.2016 <- inner_join(pitches.2016, atbat.2016, by = c("num", "gameday_link"))
+  # filter
+    chris.sale.2016 <- total.2016 %>% filter(pitcher_name == "Chris Sale")
+    
+# 2017
+  # pitch table
+    pitches.2017 <- tbl(database.2017, "pitch") %>% as.data.frame()
+    pitches.2017 <- pitches.2017[ , c(1, 3, 4, 10, 16, 17, 31, 30, 33 ,42:47)]
+  # atbat table
+    atbat.2017 <- tbl(database.2017, "atbat") %>% as.data.frame()
+    atbat.2017 <- atbat.2017[ , c(1, 2, 3, 6, 9, 11, 12, 14, 16, 17, 19, 20, 24, 25, 27, 28)]
+  # merge
+    total.2017 <- inner_join(pitches.2017, atbat.2017, by = c("num", "gameday_link"))
+  # filter
+    chris.sale.2017 <- total.2017 %>% filter(pitcher_name == "Chris Sale")
+    
+# 2018
+  # pitch table
+    pitches.2018 <- tbl(database.2018, "pitch") %>% as.data.frame()
+    pitches.2018 <- pitches.2018[ , c(1, 3, 4, 10, 16, 17, 31, 30, 33 ,42:47)]
+  # atbat table
+    atbat.2018 <- tbl(database.2018, "atbat") %>% as.data.frame()
+    atbat.2018 <- atbat.2018[ , c(1, 2, 3, 6, 9, 11, 12, 14, 16, 17, 19, 20, 24, 25, 27, 28)]
+  # merge
+    total.2018 <- inner_join(pitches.2018, atbat.2018, by = c("num", "gameday_link"))
+  # filter
+    chris.sale.2018 <- total.2018 %>% filter(pitcher_name == "Chris Sale")
+
+```
+
+```{r formating 3, warning=FALSE, message=FALSE, include=FALSE}
+
+# total merge
+  chris.sale.total <- chris.sale.2010 %>% bind_rows(chris.sale.2011)
+  chris.sale.total <- chris.sale.total %>% bind_rows(chris.sale.2012)
+  chris.sale.total <- chris.sale.total %>% bind_rows(chris.sale.2013)
+  chris.sale.total <- chris.sale.total %>% bind_rows(chris.sale.2014)
+  chris.sale.total <- chris.sale.total %>% bind_rows(chris.sale.2015)
+  chris.sale.total <- chris.sale.total %>% bind_rows(chris.sale.2016)
+  chris.sale.total <- chris.sale.total %>% bind_rows(chris.sale.2017)
+  chris.sale.total <- chris.sale.total %>% bind_rows(chris.sale.2018)
+  
+```
+
+### Understand
+
+After the get step we are left with 24234 observations and 29 variables.
+  
+Two variables are added to the data set, one is based on the date (team), the other is based on two other variables to simplified it down into one (outcome).
+  
+The variable classes are then checked to make sure each is the right type and if not changed. Variable levels names are also changed to be simpler and easier to understand. leaving the following variables:
+
+```{r outcome varible, warning=FALSE, message=FALSE, include=FALSE}
+
+# pitch Outcome 
+  # strikes
+    chris.sale.total$pitch_outcome <- ifelse(chris.sale.total$type == "S", chris.sale.total$des, NA) 
+  # Balls
+    chris.sale.total$pitch_outcome <- ifelse(chris.sale.total$type == "B", 
+                                             "Ball", chris.sale.total$pitch_outcome)
+  # balls in play
+    chris.sale.total$pitch_outcome <- ifelse(chris.sale.total$type == "X", 
+                                             chris.sale.total$event, chris.sale.total$pitch_outcome)
+
+# Team
+  chris.sale.total$team <- ifelse(chris.sale.total$date > 2016, "Boston", "White Sox")
+  chris.sale.total$team <- factor(chris.sale.total$team, levels = c("White Sox", "Boston"))
+
+```
+
+```{r variable type, warning=FALSE, message=FALSE, include=FALSE}
+
+# Checking
+  sapply(chris.sale.total, class)
+# Changing variable type
+  # To factor
+    chris.sale.total[, c("des", "type", "pitch_type", "count", "o", "stand", "p_throws", "event", 
+                         "inning_side", "outcome")] <- 
+      lapply(chris.sale.total[, c("des", "type", "pitch_type", "count", "o", "stand", "p_throws",
+                                  "event","inning_side", "pitch_outcome")], as.factor)
+  # To Logical
+    chris.sale.total[, c("on_1b", "on_2b", "on_3b")] <- 
+      lapply(chris.sale.total[, c("on_1b", "on_2b", "on_3b")], as.logical)
+    # Replacing NA, with FALSE  
+      chris.sale.total$on_1b <- ifelse(is.na(chris.sale.total$on_1b), FALSE, chris.sale.total$on_1b)
+      chris.sale.total$on_2b <- ifelse(is.na(chris.sale.total$on_2b), FALSE, chris.sale.total$on_2b)
+      chris.sale.total$on_3b <- ifelse(is.na(chris.sale.total$on_3b), FALSE, chris.sale.total$on_3b)  
+  # To Date
+    chris.sale.total[, "date"] <- chris.sale.total[, "date"] %>% ymd()
+    
+```
+
+```{r renaming, warning=FALSE, message=FALSE, include=FALSE}
+
+# Home team and away team NA to zero
+  chris.sale.total$home_team_runs <- ifelse(is.na(chris.sale.total$home_team_runs), 
+                                            0, chris.sale.total$home_team_runs)
+  chris.sale.total$away_team_runs <- ifelse(is.na(chris.sale.total$away_team_runs), 
+                                            0, chris.sale.total$away_team_runs)
+# Type
+  levels(chris.sale.total$type) <- list("Ball" = "B",
+                                        "Strike/Fouls" = "S",
+                                        "Ball in play" = "X")
+# Pitch Type
+  levels(chris.sale.total$pitch_type) <- list("Two-Seam Fastball" = "FT",
+                                              "Slider" = "SL",
+                                              "Changeup" = "CH",
+                                              "Four-Seam Fastball" = "FF",
+                                              "Intentional Walk" = "IN",
+                                              "Fastball" = "FA",
+                                              "Unknow" = "UN",
+                                              "Pitch Out" = "PO",
+                                              "Splitter" = "FS",
+                                              "Curveball" = "CU")
+# Outcome
+  chris.sale.total$pitch_outcome <- chris.sale.total$pitch_outcome %>% 
+                                      fct_collapse("Ball" ="Ball",
+                                                   "Strike Looking"  = "Called Strike",
+                                                   "Swinging Strike" = c("Missed Bunt", 
+                                                                         "Swinging Strike",
+                                                                        "Swinging Strike (Blocked)"),
+                                                   "Foul" = c("Foul", "Foul (Runner Going)",
+                                                              "Foul Bunt", "Foul Tip"),
+                                                   "Single" = "Single",
+                                                   "Double" = "Double",
+                                                   "Triple" = "Triple",
+                                                   "Home Run" = "Home Run",
+                                                   "Out" = c("Lineout", "Grounded Into DP",
+                                                             "Flyout", "Groundout", "Sac Bunt",
+                                                             "Forceout", "Pop Out", "Bunt Groundout",
+                                                             "Bunt Pop Out", "Double Play", 
+                                                             "Sac Fly",
+                                                             "Fielders Choice Out", "Triple Play", 
+                                                             "Fielders Choice"),
+                                                   "Error" = c("Field Error", "Batter Interference",
+                                                               "Fan interference"))
+# stand
+  levels(chris.sale.total$stand) <- list("Left" = "L",
+                                         "Right" = "R")
+
+```
+  
+A list of variables and there meaning can be found in the [raw code](http://rpubs.com/Npennell/FIT5147_Data_Exploration_Project_Raw_Code)
+  
+### Tidy
+
+Exploring all 29 variables would be to large of a task for this project so a large number where removed. The observations that where un-wanted; pre-season games, pitches that where never meant to be hit (Pitch Out, Intentional Walk), as well as pitch types that are thrown less than 100 times.
+  
+The finale check was to make sure it matched the 3 tidy data principles,
+  
+  1.  Each variable forms a column,
+  2.  Each observation forms a row,
+  3.  Each type of observational unit forms a table. The following is a sample of what is left.
+  
+```{r removing observation, warning=FALSE, message=FALSE, include=FALSE}
+
+# removing unwanted pitches
+  chris.sale.total$pitch_type <- chris.sale.total$pitch_type %>% as.character()
+  unwanted.pitch.type <- c("Unknow", "Pitch Out", "Intentional Walk",  
+                           NA, "Fastball", "Splitter") %>% as.factor()
+  chris.sale.total <- chris.sale.total %>% filter(!pitch_type %in% unwanted.pitch.type)
+  chris.sale.total$pitch_type <- chris.sale.total$pitch_type %>% as.factor()
+# Removing Preseaon Games    
+  chris.sale.total <- chris.sale.total %>% filter((date >= '2008-03-24' & date <= '2008-10-29') |
+                                                  (date >= '2009-04-05' & date <= '2009-11-04') |
+                                                  (date >= '2010-04-04' & date <= '2010-11-01') |
+                                                  (date >= '2011-03-31' & date <= '2011-10-28') |
+                                                  (date >= '2012-03-28' & date <= '2012-10-28') |
+                                                  (date >= '2013-03-31' & date <= '2013-10-30') |
+                                                  (date >= '2014-03-22' & date <= '2014-10-29') |
+                                                  (date >= '2015-04-05' & date <= '2015-11-01') |
+                                                  (date >= '2016-04-03' & date <= '2016-11-02') |
+                                                  (date >= '2017-04-02' & date <= '2017-11-01') |
+                                                  (date >= '2018-03-29' & date <= '2018-10-28') )
+
+# Removing pitxhes that are used less than 100 times
+  chris.sale.total <- chris.sale.total %>% group_by(pitch_type) %>% filter(n()>= 100) %>% ungroup()
+    
+```
+
+## Data Checking
+  
+The data checking process starts by examining the missing values that remain in the data. We find there are only missing values for nasty (62) and batters name (153), neither are a large amount of missing values, so the decision was made to remove those observations with missing values.
+
+```{r look at NA, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+# Removing NA's
+  # Check NA's
+    chris.sale.total %>% summarise_each(funs(sum(is.na(.))))
+  # Removing NA from `nasty` and `batter_name`
+    chris.sale.total <- chris.sale.total[complete.cases(chris.sale.total), ]
+
+```
+  
+The distribution, of the numerical values as well as their outliers, are then plotted.
+  
+```{r Outliers, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="**Plot 1:** Outliers", fig.align="center"}
+
+  # Creating data frame to plot all numerical baribles
+    plot.table <- chris.sale.total[, c("nasty", "inning", "type_confidence", "start_speed")] %>% 
+      gather(key = "variable", value = "value")
+  # plot 1
+    ggplot(data = plot.table, aes(x = variable, y = value)) + geom_violin() + 
+      geom_boxplot(width=0.1, outlier.colour = 'red') + 
+      facet_wrap( ~ variable, scales = "free") + theme_fivethirtyeight()
+    
+```
+
+Start at the top left with inning we can see the distribution matches what we would think, the values fall on integers, and decrease the larger the value becomes. This matches what we would expect as Sale is a starting pitcher meaning he starts the game and really see's the end of a game. The interesting note from the distribution is the decrease in the seconds innings.
+   
+The nasty value has, some outliers, on the top end, none of these values are over one-hundred, as nasty is a score from zero to one-hundred, none of these outliers need to be removed, as they are just Sale's best pitches for his career so far.
+  
+The start speed, variable also has an outlier, this one is will be removed, due to the fact it falls so far from the rest of the distribution, as Sale's slower pitches seem to fall around 80mph. Thus, the outliers most likely belongs to a pitch we don't want to have in the analysis or was a miss recording.
+   
+The type confidence has the most outliers. As type confidence is a measure of how accurate an observation is, all the outliers will be removed. The mean is also very close to the maximum value, which is very positive as we want as many values close to or at the maximum.
+   
+```{r outlier removeal, warning=FALSE, error=FALSE, echo=FALSE}
+  
+  # Function to Remove Outliers Using Outlier Detection 
+    outlier.qr <- function(data, var_name)
+      {
+        data$var_name <- eval(substitute(var_name), data) 
+        iqr <- IQR(data$`var_name`, na.rm = TRUE)
+        qr <- quantile(data$var_name, c(0.25,0.75))
+        Q1 <- qr[[1]] - 1.5*iqr
+        Q3 <- qr[[2]] + 1.5*iqr
+        data <- data %>% filter(var_name < Q3 & var_name > Q1)
+        return(data)
+    }
+
+  # removing outliers form type_confidence
+    chris.sale.total <- outlier.qr(chris.sale.total, type_confidence)
+
+
+```
+  
+The next exploration step is a quick correlation check, we don't expect to find any correlation, but will take a quick look to be safe.
+  
+```{r corelation, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="**Plot 2:** Corelation Plot 1", fig.align="center"}
+
+# list of numerical varible
+  numerical.varible <- c("start_speed", "px", "pz", "nasty", "inning")
+# colour brewer
+  pitch_col <- brewer.pal(length(unique(chris.sale.total$pitch_type)),"Set1")
+  # pair
+    pairs(chris.sale.total[, numerical.varible], lower.panel = NULL, col = pitch_col)
+  # add ledgend
+    par(xpd = TRUE)
+      legend(x = 0.05, y = 0.5, cex = 1, legend = as.character(levels(chris.sale.total$pitch_type)), 
+             fill = unique(pitch_col))
+    par(xpd = NA)
+    
+```
+
+```{r corelation 2, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="**Plot 3:** Corelation Plot 2", fig.align="center"}
+
+# cor plot    
+  chris.sale.total[, numerical.varible] %>% cor() %>% corrplot(method = "color", type="upper")
+      
+```
+  
+The two plots make it clear there is no strong correlation (positive or negative) between variables. So it's safe to move on.
+  
+## Data Exploration
+  
+The first correlation plot gives the first look at the 5 types of pitches that Sale throws, a Changeup, Curveball, Four-Seam Fastball, Slider and the Two-Seam Fastball ([this site explains a little about each one](https://lokeshdhakar.com/baseball-pitches-illustrated/)).
+  
+From here we want to find out how often he uses each and which one he uses the most. A good way to show this is to start with a simple time series.
+
+```{r frequncey year, warning=FALSE, error=FALSE, echo=FALSE}
+
+  # Formate data
+    # Pitches by date and type
+      pitch.by.year <- table(year(chris.sale.total$date), chris.sale.total$pitch_type, 
+                             dnn = c("year", "pitch_type")) %>% as.data.frame()
+    # Pitches by date
+      total.pitch.year <- table(year(chris.sale.total$date), dnn = "year") %>% as.data.frame()
+    # Join and order
+      pitch.by.year <- full_join(pitch.by.year, total.pitch.year, by = "year")
+    # Formate and adding percentage as well as year days
+      colnames(pitch.by.year) <- c("year", "pitch_type", "type_freq", "year_freq")
+      pitch.by.year$perc <- pitch.by.year$type_freq / pitch.by.year$year_freq
+      pitch.by.year$year <- pitch.by.year$year %>% as.Date("%Y")
+      pitch.by.year$year <- pitch.by.year$year %>% year()
+    # Removing zeros
+      pitch.by.year <- pitch.by.year %>% filter(type_freq != 0)
+
+```
+
+```{r frequncey year plot, warning=FALSE, error=FALSE, echo=FALSE, fig.cap="**Plot 4:** Frequncey By Year", fig.align="center"}      
+  
+  # plot
+    ggplot(pitch.by.year, aes(x = year, y = perc)) + 
+      geom_line(aes(colour = pitch_type), size = 1) + 
+      geom_point(fill = "black", aes(colour = pitch_type)) +
+      geom_vline(xintercept = 2016.5, linetype = "dashed", colour = "#666666") +
+      geom_text(x = 2016.7, y = 0.6, label = "traded", colour = "#666666", size = 6) +
+      theme_fivethirtyeight() + scale_colour_brewer(palette = 'Set1')
+
+```
+
+```{r frequncey year table, warning=FALSE, error=FALSE, echo=FALSE}
+  
+  # Table
+     pitch.by.year %>% kable() %>% kable_styling(bootstrap_options = "striped", 
+                                                 full_width = FALSE, fixed_thead = TRUE) %>% 
+  row_spec(0, bold = T, color = "white", background = "#a2000a")
+
+```
+  
+The y-axis shows the frequency a pitch was throw as a percentage of the total pitches thrown in that year, while the x-axis shows the year.
+  
+This plot shows what pitches where thrown in which year, note the Curveball was only used in 2016, while the Four-Seam Fastball wasn't used in 2010. The plot also labels the date Sale got [traded](http://www.espn.com.au/mlb/story/_/id/18219932/boston-red-sox-land-chris-sale-blockbuster-trade-chicago-white-sox), form the Chicago White Sox's to the Boston Red Sox's ([1 of 236 players to play for both Sox teams](https://www.baseball-reference.com/friv/multifranchise.cgi?level=franch&t1=CHW&t2=BOS&t3=--&t4=--). This is an event which clearly changes the tactic behind what pitch is thrown. 
+   
+By looking at the years just before the trader we can see the Two-Seamer is the go-to pitch, while being predominantly backed up by the Slider and Changeup, with the Slider being preferred from 2010 to 2013, then the Changeup becomes the preferred secondary pitch. In 2016, all secondary pitches fall below 20%, this coincides with adding the Curveball to the arsenal, and a spike in the Two-Seamer, reaching above 60% for the first time since 2010 ([this was due to a change in game play Sale and the White Sox implanted for the 2016 season](https://www.theringer.com/2017/4/17/16042608/2017-mlb-boston-red-sox-chris-sale-early-trade-returns-52782680003a)).
+   
+Once the trade happens Sale returned to the old game plane with, according to the data, a new twist.  In 2017 the Curveball which had just been introduced was no longer in use, the Splitter was back to being the secondary pitch, back over 30% first time scene 2011. The change up back down to below 20%. The most drastic change and new twist to the game plane, was the Two-Seamer was being used ~10% and the rarely use Four-Seamer was now the primary pitch at ~37%.  
+   
+Another way to look at the changing frequency is to beak the time series into years and pitch-type.
+   
+```{r Frequncey day, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="**Plot 5:** Frequncey By Year Days", fig.align="center", fig.height=8, fig.width=8}
+  
+  # Formate data
+    # Pitches by date and type
+      pitch.by.date <- table(chris.sale.total$date, chris.sale.total$pitch_type, 
+                             dnn = c("date", "pitch_type")) %>% as.data.frame()
+    # Pitches by date
+      total.pitch.date <- table(chris.sale.total$date, dnn = "date") %>% as.data.frame()
+    # Join and order
+      pitch.by.date <- full_join(pitch.by.date, total.pitch.date, by = "date")
+      pitch.by.date <- pitch.by.date %>% arrange(date)
+    # Formate and adding percentage as well as year days
+      colnames(pitch.by.date) <- c("date", "pitch_type", "type_freq", "date_freq")
+      pitch.by.date$perc <- pitch.by.date$type_freq / pitch.by.date$date_freq
+      pitch.by.date$date <- pitch.by.date$date %>% ymd()
+      pitch.by.date$date.yd <- pitch.by.date$date %>% yday()
+    # Nemoving zeros
+      pitch.by.date <- pitch.by.date %>% filter(type_freq != 0)
+
+    
+  # time series (ggplot)
+    ggplot(pitch.by.date, aes(x = date.yd, y = perc)) + 
+      geom_line(aes(colour = pitch_type), size = 1) +
+      theme_grey() + facet_grid(year(date)~pitch_type) + 
+      scale_colour_brewer(palette = 'Set1') + xlab("Year Days") + ylab("Percentage") + 
+      theme_fivethirtyeight()
+
+```
+
+In this plot the y-axis is the same as before, the x-axis is the Year day, this allows the time series to be faceted easily into year and pitch type, to show the change of frequency thorough out a year.
+  
+This plot helps show the frequency variance of a pitch type for each year. 2010 was the first year Sale played in the MLB, and he came in later in the year, the 6th of August. For the most part each year and pitch type keep a consistent frequency, All but 2011. This could be due to the reduced number of pitches thrown in 2011,
+  
+year| Total Pitches
+----|--------------
+2010 | 372
+2011 | 1090
+2012 | 3009
+2013 | 3304
+2014 | 2764
+2015 | 3294
+2016 | 3308
+2017 | 3596
+2018 | 2322
+  
+Or could be a result of growing pains and trying to establish him self in his first full year in the MLB.
+  
+Another aspect of the data set is the location of the pitches,
+  
+```{r loaction setup, warning=FALSE, message=FALSE, echo=FALSE}
+
+  # Home plate and ave. strike zone
+    # ave strike zone
+      strike.zone <- geom_rect(aes(xmin = -0.95, xmax = 0.95, ymin = 1.6, ymax = 3.5), fill = NA, 
+                               color = "#ff6116", size = 0.4)
+    # home plate
+      hp.x <- c(-0.95, -0.95, 0, 0.95, 0.95)
+      hp.y <- c(0, -0.475, -0.95, -0.475, 0)
+      hp <- data.frame(hp.x, hp.y)
+    # Join
+      home.plate  <- geom_polygon(data = hp, aes(x = hp.x, y = hp.y), fill = NA, 
+                                  color = "#ff6116", size = 0.5)
+
+```      
+
+```{r location all, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="**Plot 6:** Location of All Pitches", fig.align="center"}
+            
+  # Hex plot
+    # All Pitches
+      ggplot(data = chris.sale.total, aes(x = px, y = pz)) + geom_hex() + coord_fixed() + 
+        strike.zone + home.plate + scale_fill_viridis() + theme_fivethirtyeight()
+
+```
+
+From this data we can see that most pitches end up in the strike zone.
+  
+This data is use for to see where certain pitch types are thrown, and where, if not thrown correctly they miss the strike zone (the strike zone is show by the orange box).
+  
+```{r location pitch type, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="**Plot 7:** Location by Pitch Type", fig.align="center"}
+
+    # facet by pitch type
+      # Finding tally
+        pitch.type.tally <- chris.sale.total %>% group_by(pitch_type) %>% tally()
+      # plot
+         ggplot(data = chris.sale.total, aes(x = px, y = pz)) + geom_hex() + coord_fixed() + 
+           strike.zone + home.plate + scale_fill_viridis() + facet_grid(~pitch_type) + 
+           theme_fivethirtyeight() + 
+           geom_label(data = pitch.type.tally, aes(label=paste('n=', n)), 
+                      x = -4.25, y = 5, vjust = 0, hjust = 0)
+         
+```
+  
+Starting with the Changeup, the target is, shown by the higher frequency in the bottom right corner of the strike zone, the misses are also in the same area with a lot of pitches missing to the right hand side, indicating this pitch is probably thrown to right hander more than left handers, as it would hit a left hander. The Curveball with its much smaller sample size, is much harder to so see the area that is being aimed for, its clear that the pitch wasn't meant for the top left corner. The Four-Seamer is a pitch that's fast and used to challenge the batter to see if he can hit it, same as the Two-Seamer. The Four-Seamer is thrown in the top half of the strike zone and thus the misses for the Four-seamer are above the strike zone. If this is compared to the pitch is has replaced the Two-seamer, the location of which is more central and has more misses all around the strike zone. Finally, the Slider a pitch Sale is trying to throw down and left in the strike zone, has a similar shape to the Curveball, with misses above the top right and below the bottom left corner, this could be the pitch get away from Sale, or him trying to use it to get swings and misses.
+   
+It was brought up earlier that the Changeup was probably thrown to right handers more, so to check this, plot 6 was split into left and right handers,  
+  
+```{r location stand, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="**Plot 8:** Location by Pitch Type and Stand", fig.align="center"}        
+        
+  # stand
+    # stand and pitch type
+      # Finding tally
+         pitch.stand.type.tally <- chris.sale.total %>% group_by(pitch_type, stand) %>% tally()
+      # plot location
+        ggplot(data = chris.sale.total, aes(x = px, y = pz)) + geom_hex() + coord_fixed() + 
+          strike.zone + home.plate + scale_fill_viridis() + facet_grid(stand~pitch_type) + 
+          theme_fivethirtyeight() + 
+          geom_label(data = pitch.stand.type.tally, aes(label=paste('n=', n)),
+                     x = -4.25, y = 5, vjust = 0, hjust = 0)
+``` 
+
+A frequency pitch type plot was also added to help add some incite. 
+
+```{r freqency stand, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="**Plot 9:** Freqcency of Pitches by Stand", fig.align="center"}
+      
+  # formate
+    stand.freq <- chris.sale.total %>% group_by(stand) %>% tally()
+    type.stand.freq <- stand.freq %>% full_join(pitch.stand.type.tally, by = "stand")
+    colnames(type.stand.freq) <- c("stand", "stand.total", "pitch_type", "stand_type_total")
+    type.stand.freq$perc <- type.stand.freq$stand_type_total / type.stand.freq$stand.total
+
+  # pitch type freqency plot
+    ggplot(data = type.stand.freq, aes(x = pitch_type, y = perc)) + coord_flip() + 
+      geom_bar(aes(fill = pitch_type), stat = "identity") + facet_grid(.~stand)  +
+      theme_fivethirtyeight() + scale_fill_brewer(palette = 'Set1') + 
+      scale_y_continuous(labels = scales::percent)
+
+```
+
+In analyzing these plots, we must be careful with sample sizes as its clear Sale throws to left hands much less than right handers, 4567 pitch's to left handers compared to 18492 pitch's to right handers. The distribution shape of the pitches is similar no matter what hand the batter is. But the frequency does clearly show what was hypothesized before, that the change up is use far less often to left handers compared to right handers.  
+  
+The other way to examine the location is to compare Sale's time at before and after the trade.
+    
+```{r location team, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="**Plot 10:** Location by Pitch Type and Team", fig.align="center"}
+
+  # team
+    # stand and pitch type
+      # Finding tally
+         pitch.team.type.tally <- chris.sale.total %>% group_by(pitch_type, team) %>% tally()
+      # plot
+        ggplot(data = chris.sale.total, aes(x = px, y = pz)) + geom_hex() + coord_fixed() + 
+          strike.zone + home.plate + scale_fill_viridis() + facet_grid(team~pitch_type) + 
+          theme_fivethirtyeight() + 
+          geom_label(data = pitch.team.type.tally, aes(label=paste('n=', n)), 
+                      x = -4.25, y = 5, vjust = 0, hjust = 0)
+
+``` 
+
+This plot gives us no real insight, the shapes and hot spots are very similar if not the exact same for both teams. Showing, all thought Sale might have changed what pitches he throws and how often, after the trade he didn't change the location.
+  
+The last thing to look at will be the outcome of Sale's pitches, to keep things simple, just the years 2016 and 2017, Sale's last year in Chicago and his first year in Boston, the years that where mentioned regarding the different game plans earlier.
+   
+```{r outcome, warning=FALSE, error=FALSE, echo=FALSE, fig.cap="**Plot 11:** Outcome by Year", fig.align="center"}
+
+  # formate
+    holder <- chris.sale.total %>% filter(year(date) == 2016 | year(date) == 2017)
+    pitch.outcome.tally <- holder %>% group_by(pitch_outcome, year(date)) %>% tally()
+
+  # plot
+    ggplot(pitch.outcome.tally, aes(x = pitch_outcome, y = n)) + 
+      geom_bar(aes(fill = pitch_outcome), stat = "identity") + coord_flip() + 
+      facet_grid(.~ `year(date)`) + scale_fill_brewer(palette = 'Set3')  + theme_fivethirtyeight() + 
+      geom_label(data = pitch.outcome.tally, aes(label=n))
+
+```
+  
+We know the 2016 game plan was to get more balls hit into play and get outs that way, compared to the 2017 plan of going back to getting swings and misses and strike outs. The data back ups that is what happened. 2016 had a total of 953 strikes (swing strikes plus Strike looking) and 412 outs (note an out is a ball hit in to play that results in an out), compared to 2017 which had 1,194 strikes and just 338 outs. The other points of notes are that balls and fouls went up in. The balls are expected due to trying to get batters to swing at balls outside the strike zone is a key part of getting strike outs. The fouls are more surprising, I would have expected the 2016 plan to get more balls in play would yield more bats on balls and thus more fouls, this is not the case. Equally surprising is the hits (hits = Single + Double + Triple + Home Run) are about equally for each year, with 2016 at 185 and 2017 at 177 (note in 2017 sale throw 288 more pitches than in 2016).
+   
+## Conclusion
+   
+From looking at the data, it's become clear the biggest factor on the change on the pitch type frequency has been Sale's move from Chicago to Boston, and the change in game plane that came with it. In the move the Two-Seamer was replaced by the Four-Seamer while the Curveball was removed. As well as no pitch was thrown more than 40%. 
+
+The Location of the pitches was able to be shown, clear target areas for most pitches where easy to identify as well as the spots the pitches where missed. 
+
+On top of answering the two question that where originally set, the difference of Sale throwing to a left or right handed batter was explored with, both hands facing the same locations of pitches, but left handers face less Changeup's and more Sliders. The outcome of pitches from before and after Sale's trade where also looked at. Finding that the change of plan did have a major effect on the outcome of the thrown pitch, in the way he got out but not result of balls hit into play against him.
+
+## Reflection
+  
+There is plenty more that could be explored. Sale made the playoffs for the first time in 2017 and then won the World Series in 2018, it would be interesting to see if anything changed in playoff environment. A look at the speed and nasty score of the balls Sale throws would also be useful, to judge his form. A deep dive in to specific situations, such as 1 out bottom of the 9th winning by one run, and a 3-2 count, and may other things could be done with the data given the time.
+
+Steps that could be taken to improve what has been done in this report are a look at a different way to scrape the data, as pitchRx has stop being updated making it hard to get the playoff games for 2018 and any games past that. I would recommend looking in to the baseballr package (even though it uses the pitchRx package) or scrape that data from another program. Also add some more in-depth stats, such as WAR and ERA, to judge performance from year to year.
+  
+## References/Bibliography
+  - [raw code for this project](http://rpubs.com/Npennell/FIT5147_Data_Exploration_Project_Raw_Code)
+  - [pitchRx](https://github.com/cpsievert/pitchRx)
+  - [Baseball pitches illustrated](https://lokeshdhakar.com/baseball-pitches-illustrated/)
+  - [Baseball Reference](https://www.baseball-reference.com/friv/multifranchise.cgi?level=franch&t1=CHW&t2=BOS&t3=--&t4=--)
+  - [The Ringer](https://www.theringer.com/2017/4/17/16042608/2017-mlb-boston-red-sox-chris-sale-early-trade-returns-52782680003a)
+  
+all data wrangling was done in R, as where all the plots, with the following packages:
+  
+  - pitchRx, package to scrape data  
+  - RSQLite, loading in data of hard drive into r 
+  - readr, read in files
+  - dplyr, data wrangling  
+  - tidyr, data wrangling  
+  - forcats, data wrangling  
+  - lubridate, data wrangling  
+  - outliers, dealing with outliers  
+  - corrplot, correlation plot  
+  - RColorBrewer, colour package  
+  - viridis, colour package  
+  - ggplot2, plots  
+  - kableExtra, tables  
+  - ggthemes, plot themes  
+
+<br>
+<br>

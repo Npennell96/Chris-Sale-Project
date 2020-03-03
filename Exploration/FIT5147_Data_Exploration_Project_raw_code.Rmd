@@ -1,0 +1,536 @@
+---
+title: "FIT5147 Data Exploration Project Raw Code"
+author: "Nicholas Pennell, 30338913"
+output: html_document
+---
+
+```{r packages, message=FALSE, warning=FALSE}
+
+  library(pitchRx) # data pack
+  library(RSQLite) # loading in data of c drive
+  library(readr) # read in files
+  library(dplyr) # cleaing data
+  library(tidyr) # cleaning data
+  library(forcats) # cleaning data
+  library(lubridate) # cleaing dates
+  library(outliers) # outliers
+  library(corrplot) # correlation plot
+  library(RColorBrewer) # colour package
+  library(viridis) # colour package
+  library(ggplot2) # plots
+  library(kableExtra) # html tabel
+  library(ggthemes) # plot themes
+  library(tinytex) # knit to pdf
+  library(knitr) # kniting
+  library(prettydoc) # rmarkdown theme
+
+```
+
+## Data Wrangling
+The data wrangling process is split into several steps   
+  
+  + **Get**: Sourcing the data and reading it into in R,
+  + **Understand**: Add any new variable, examine and alternating variables, and make sure we know what each variable is.  
+  + **Tidy**: This is completed with serval packages, `dplyr`, `tidyr`, `lubridate` and `RSQLite`. 
+  
+### Get
+  
+```{r loading data, warning=FALSE, message=FALSE}
+
+  database.2010 <- src_sqlite("C:/Data/Baseball/pitchRx 2010.sqlite3", create = FALSE)
+  database.2011 <- src_sqlite("C:/Data/Baseball/pitchRx 2011.sqlite3", create = FALSE)
+  database.2012 <- src_sqlite("C:/Data/Baseball/pitchRx 2012.sqlite3", create = FALSE)
+  database.2013 <- src_sqlite("C:/Data/Baseball/pitchRx 2013.sqlite3", create = FALSE)
+  database.2014 <- src_sqlite("C:/Data/Baseball/pitchRx 2014.sqlite3", create = FALSE)
+  database.2015 <- src_sqlite("C:/Data/Baseball/pitchRx 2015.sqlite3", create = FALSE)
+  database.2016 <- src_sqlite("C:/Data/Baseball/pitchRx 2016.sqlite3", create = FALSE)
+  database.2017 <- src_sqlite("C:/Data/Baseball/pitchRx 2017.sqlite3", create = FALSE)
+  database.2018 <- src_sqlite("C:/Data/Baseball/pitchRx 2018.sqlite3", create = FALSE)
+  
+```
+
+```{r formating, warning=FALSE, message=FALSE}
+
+# 2010
+  # pitch table
+    pitches.2010 <- tbl(database.2010, "pitch") %>% as.data.frame()
+    pitches.2010 <- pitches.2010[ , c(1, 3, 4, 10, 16, 17, 31, 30, 33 ,42:47)]
+  # atbat table
+    atbat.2010 <- tbl(database.2010, "atbat") %>% as.data.frame()
+    atbat.2010 <- atbat.2010[ , c(1, 2, 3, 6, 9, 11, 12, 14, 16, 17, 19, 20, 24, 25, 27, 28)]
+  # merge
+    total.2010 <- inner_join(pitches.2010, atbat.2010, by = c("num", "gameday_link"))
+  # filter
+    chris.sale.2010 <- total.2010 %>% filter(pitcher_name == "Chris Sale")
+
+# 2011
+  # pitch table
+    pitches.2011 <- tbl(database.2011, "pitch") %>% as.data.frame()
+    pitches.2011 <- pitches.2011[ , c(1, 3, 4, 10, 16, 17, 31, 30, 33 ,42:47)]
+  # atbat table
+    atbat.2011 <- tbl(database.2011, "atbat") %>% as.data.frame()
+    atbat.2011 <- atbat.2011[ , c(1, 2, 3, 6, 9, 11, 12, 14, 16, 17, 19, 20, 24, 25, 27, 28)]
+  # merge
+    total.2011 <- inner_join(pitches.2011, atbat.2011, by = c("num", "gameday_link"))
+  # filter
+    chris.sale.2011 <- total.2011 %>% filter(pitcher_name == "Chris Sale")
+
+# 2012
+  # pitch table
+    pitches.2012 <- tbl(database.2012, "pitch") %>% as.data.frame()
+    pitches.2012 <- pitches.2012[ , c(1, 3, 4, 10, 16, 17, 31, 30, 33 ,42:47)]
+  # atbat table
+    atbat.2012 <- tbl(database.2012, "atbat") %>% as.data.frame()
+    atbat.2012 <- atbat.2012[ , c(1, 2, 3, 6, 9, 11, 12, 14, 16, 17, 19, 20, 24, 25, 27, 28)]
+  # merge
+    total.2012 <- inner_join(pitches.2012, atbat.2012, by = c("num", "gameday_link"))
+  # filter
+    chris.sale.2012 <- total.2012 %>% filter(pitcher_name == "Chris Sale")
+    
+# 2013
+  # pitch table
+    pitches.2013 <- tbl(database.2013, "pitch") %>% as.data.frame()
+    pitches.2013 <- pitches.2013[ , c(1, 3, 4, 10, 16, 17, 31, 30, 33 ,42:47)]
+  # atbat table
+    atbat.2013 <- tbl(database.2013, "atbat") %>% as.data.frame()
+    atbat.2013 <- atbat.2013[ , c(1, 2, 3, 6, 9, 11, 12, 14, 16, 17, 19, 20, 24, 25, 27, 28)]
+  # merge
+    total.2013 <- inner_join(pitches.2013, atbat.2013, by = c("num", "gameday_link"))
+  # filter
+    chris.sale.2013 <- total.2013 %>% filter(pitcher_name == "Chris Sale")
+  
+# 2014
+  # pitch table
+    pitches.2014 <- tbl(database.2014, "pitch") %>% as.data.frame()
+    pitches.2014 <- pitches.2014[ , c(1, 3, 4, 10, 16, 17, 31, 30, 33 ,42:47)]
+  # atbat table
+    atbat.2014 <- tbl(database.2014, "atbat") %>% as.data.frame()
+    atbat.2014 <- atbat.2014[ , c(1, 2, 3, 6, 9, 11, 12, 14, 16, 17, 19, 20, 24, 25, 27, 28)]
+  # merge
+    total.2014 <- inner_join(pitches.2014, atbat.2014, by = c("num", "gameday_link"))
+  # filter
+    chris.sale.2014 <- total.2014 %>% filter(pitcher_name == "Chris Sale")
+    
+# 2015
+  # pitch table
+    pitches.2015 <- tbl(database.2015, "pitch") %>% as.data.frame()
+    pitches.2015 <- pitches.2015[ , c(1, 3, 4, 10, 16, 17, 31, 30, 33 ,42:47)]
+  # atbat table
+    atbat.2015 <- tbl(database.2015, "atbat") %>% as.data.frame()
+    atbat.2015 <- atbat.2015[ , c(1, 2, 3, 6, 9, 11, 12, 14, 16, 17, 19, 20, 24, 25, 27, 28)]
+  # merge
+    total.2015 <- inner_join(pitches.2015, atbat.2015, by = c("num", "gameday_link"))
+  # filter
+    chris.sale.2015 <- total.2015 %>% filter(pitcher_name == "Chris Sale")
+    
+# 2016
+  # pitch table
+    pitches.2016 <- tbl(database.2016, "pitch") %>% as.data.frame()
+    pitches.2016 <- pitches.2016[ , c(1, 3, 4, 10, 16, 17, 31, 30, 33 ,42:47)]
+  # atbat table
+    atbat.2016 <- tbl(database.2016, "atbat") %>% as.data.frame()
+    atbat.2016 <- atbat.2016[ , c(1, 2, 3, 6, 9, 11, 12, 14, 16, 17, 19, 20, 24, 25, 27, 28)]
+  # merge
+    total.2016 <- inner_join(pitches.2016, atbat.2016, by = c("num", "gameday_link"))
+  # filter
+    chris.sale.2016 <- total.2016 %>% filter(pitcher_name == "Chris Sale")
+    
+# 2017
+  # pitch table
+    pitches.2017 <- tbl(database.2017, "pitch") %>% as.data.frame()
+    pitches.2017 <- pitches.2017[ , c(1, 3, 4, 10, 16, 17, 31, 30, 33 ,42:47)]
+  # atbat table
+    atbat.2017 <- tbl(database.2017, "atbat") %>% as.data.frame()
+    atbat.2017 <- atbat.2017[ , c(1, 2, 3, 6, 9, 11, 12, 14, 16, 17, 19, 20, 24, 25, 27, 28)]
+  # merge
+    total.2017 <- inner_join(pitches.2017, atbat.2017, by = c("num", "gameday_link"))
+  # filter
+    chris.sale.2017 <- total.2017 %>% filter(pitcher_name == "Chris Sale")
+    
+# 2018
+  # pitch table
+    pitches.2018 <- tbl(database.2018, "pitch") %>% as.data.frame()
+    pitches.2018 <- pitches.2018[ , c(1, 3, 4, 10, 16, 17, 31, 30, 33 ,42:47)]
+  # atbat table
+    atbat.2018 <- tbl(database.2018, "atbat") %>% as.data.frame()
+    atbat.2018 <- atbat.2018[ , c(1, 2, 3, 6, 9, 11, 12, 14, 16, 17, 19, 20, 24, 25, 27, 28)]
+  # merge
+    total.2018 <- inner_join(pitches.2018, atbat.2018, by = c("num", "gameday_link"))
+  # filter
+    chris.sale.2018 <- total.2018 %>% filter(pitcher_name == "Chris Sale")
+
+```
+
+```{r formating 3, warning=FALSE, message=FALSE}
+
+# total merge
+  chris.sale.total <- chris.sale.2010 %>% bind_rows(chris.sale.2011)
+  chris.sale.total <- chris.sale.total %>% bind_rows(chris.sale.2012)
+  chris.sale.total <- chris.sale.total %>% bind_rows(chris.sale.2013)
+  chris.sale.total <- chris.sale.total %>% bind_rows(chris.sale.2014)
+  chris.sale.total <- chris.sale.total %>% bind_rows(chris.sale.2015)
+  chris.sale.total <- chris.sale.total %>% bind_rows(chris.sale.2016)
+  chris.sale.total <- chris.sale.total %>% bind_rows(chris.sale.2017)
+  chris.sale.total <- chris.sale.total %>% bind_rows(chris.sale.2018)
+  
+```
+
+### Understand
+
+```{r outcome varible, warning=FALSE, message=FALSE}
+
+# pitch Outcome 
+  # strikes
+    chris.sale.total$pitch_outcome <- ifelse(chris.sale.total$type == "S", chris.sale.total$des, NA) 
+  # Balls
+    chris.sale.total$pitch_outcome <- ifelse(chris.sale.total$type == "B", 
+                                             "Ball", chris.sale.total$pitch_outcome)
+  # balls in play
+    chris.sale.total$pitch_outcome <- ifelse(chris.sale.total$type == "X", 
+                                             chris.sale.total$event, chris.sale.total$pitch_outcome)
+
+# Team
+  chris.sale.total$team <- ifelse(chris.sale.total$date > 2016, "Boston", "White Sox")
+  chris.sale.total$team <- factor(chris.sale.total$team, levels = c("White Sox", "Boston"))
+
+```
+
+```{r variable type, warning=FALSE, message=FALSE}
+
+# Changing variable type
+  # To factor
+    chris.sale.total[, c("des", "type", "pitch_type", "count", "o", "stand", "p_throws", "event", 
+                         "inning_side", "outcome")] <- 
+      lapply(chris.sale.total[, c("des", "type", "pitch_type", "count", "o", "stand", "p_throws",
+                                  "event","inning_side", "pitch_outcome")], as.factor)
+  # To Logical
+    chris.sale.total[, c("on_1b", "on_2b", "on_3b")] <- 
+      lapply(chris.sale.total[, c("on_1b", "on_2b", "on_3b")], as.logical)
+    # Replacing NA, with FALSE  
+      chris.sale.total$on_1b <- ifelse(is.na(chris.sale.total$on_1b), FALSE, chris.sale.total$on_1b)
+      chris.sale.total$on_2b <- ifelse(is.na(chris.sale.total$on_2b), FALSE, chris.sale.total$on_2b)
+      chris.sale.total$on_3b <- ifelse(is.na(chris.sale.total$on_3b), FALSE, chris.sale.total$on_3b)  
+  # To Date
+    chris.sale.total[, "date"] <- chris.sale.total[, "date"] %>% ymd()
+    
+```
+
+```{r renaming, warning=FALSE, message=FALSE}
+
+# Home team and away team NA to zero
+  chris.sale.total$home_team_runs <- ifelse(is.na(chris.sale.total$home_team_runs), 
+                                            0, chris.sale.total$home_team_runs)
+  chris.sale.total$away_team_runs <- ifelse(is.na(chris.sale.total$away_team_runs), 
+                                            0, chris.sale.total$away_team_runs)
+# Type
+  levels(chris.sale.total$type) <- list("Ball" = "B",
+                                        "Strike/Fouls" = "S",
+                                        "Ball in play" = "X")
+# Pitch Type
+  levels(chris.sale.total$pitch_type) <- list("Two-Seam Fastball" = "FT",
+                                              "Slider" = "SL",
+                                              "Changeup" = "CH",
+                                              "Four-Seam Fastball" = "FF",
+                                              "Intentional Walk" = "IN",
+                                              "Fastball" = "FA",
+                                              "Unknow" = "UN",
+                                              "Pitch Out" = "PO",
+                                              "Splitter" = "FS",
+                                              "Curveball" = "CU")
+# Outcome
+  chris.sale.total$pitch_outcome <- chris.sale.total$pitch_outcome %>% 
+                                      fct_collapse("Ball" ="Ball",
+                                                   "Strike Looking"  = "Called Strike",
+                                                   "Swinging Strike" = c("Missed Bunt", 
+                                                                         "Swinging Strike",
+                                                                        "Swinging Strike (Blocked)"),
+                                                   "Foul" = c("Foul", "Foul (Runner Going)",
+                                                              "Foul Bunt", "Foul Tip"),
+                                                   "Single" = "Single",
+                                                   "Double" = "Double",
+                                                   "Triple" = "Triple",
+                                                   "Home Run" = "Home Run",
+                                                   "Out" = c("Lineout", "Grounded Into DP",
+                                                             "Flyout", "Groundout", "Sac Bunt",
+                                                             "Forceout", "Pop Out", "Bunt Groundout",
+                                                             "Bunt Pop Out", "Double Play", 
+                                                             "Sac Fly",
+                                                             "Fielders Choice Out", "Triple Play", 
+                                                             "Fielders Choice"),
+                                                   "Error" = c("Field Error", "Batter Interference",
+                                                               "Fan interference"))
+# stand
+  levels(chris.sale.total$stand) <- list("Left" = "L",
+                                         "Right" = "R")
+
+```
+
+```{r varible table, warning=FALSE, message=FALSE}
+
+  varible <- read_csv("varibles.csv")
+
+  varible$`Outcome of the pitch` <- ifelse(is.na(varible$X4),
+                                           varible$`Outcome of the pitch`,
+                                           paste(varible$`Outcome of the pitch`, varible$X4))
+  
+  varible[, 1:3] %>% kable() %>% kable_styling("striped", full_width = F)
+
+```
+  
+### Tidy
+
+```{r removing observation, warning=FALSE, message=FALSE, include=FALSE}
+
+# removing unwanted pitches
+  chris.sale.total$pitch_type <- chris.sale.total$pitch_type %>% as.character()
+  unwanted.pitch.type <- c("Unknow", "Pitch Out", "Intentional Walk",  
+                           NA, "Fastball", "Splitter") %>% as.factor()
+  chris.sale.total <- chris.sale.total %>% filter(!pitch_type %in% unwanted.pitch.type)
+  chris.sale.total$pitch_type <- chris.sale.total$pitch_type %>% as.factor()
+# Removing Preseaon Games    
+  chris.sale.total <- chris.sale.total %>% filter((date >= '2008-03-24' & date <= '2008-10-29') |
+                                                  (date >= '2009-04-05' & date <= '2009-11-04') |
+                                                  (date >= '2010-04-04' & date <= '2010-11-01') |
+                                                  (date >= '2011-03-31' & date <= '2011-10-28') |
+                                                  (date >= '2012-03-28' & date <= '2012-10-28') |
+                                                  (date >= '2013-03-31' & date <= '2013-10-30') |
+                                                  (date >= '2014-03-22' & date <= '2014-10-29') |
+                                                  (date >= '2015-04-05' & date <= '2015-11-01') |
+                                                  (date >= '2016-04-03' & date <= '2016-11-02') |
+                                                  (date >= '2017-04-02' & date <= '2017-11-01') |
+                                                  (date >= '2018-03-29' & date <= '2018-10-28') )
+
+# Removing pitxhes that are used less than 100 times
+  chris.sale.total <- chris.sale.total %>% group_by(pitch_type) %>% filter(n()>= 100) %>% ungroup()
+    
+```
+
+## Data Checking
+  
+```{r look at NA, echo=FALSE, message=FALSE, warning=FALSE}
+
+# Removing NA's
+  # Removing NA from `nasty` and `batter_name`
+    chris.sale.total <- chris.sale.total[complete.cases(chris.sale.total), ]
+
+```
+  
+```{r Outliers, warning=FALSE, message=FALSE, fig.cap="**Plot 1:** Outliers", fig.align="center", fig.height=6.5}
+
+  # Creating data frame to plot all numerical baribles
+    plot.table <- chris.sale.total[, c("nasty", "inning", "type_confidence", "start_speed")] %>% 
+      gather(key = "variable", value = "value")
+  # plot 1
+    ggplot(data = plot.table, aes(x = variable, y = value)) + geom_violin() + 
+      geom_boxplot(width=0.1, outlier.colour = 'red') + 
+      facet_wrap( ~ variable, scales = "free") + theme_fivethirtyeight()
+    
+```
+
+   
+```{r outlier removeal, warning=FALSE, error=FALSE}
+  
+  # Function to Remove Outliers Using Outlier Detection 
+    outlier.qr <- function(data, var_name)
+      {
+        data$var_name <- eval(substitute(var_name), data) 
+        iqr <- IQR(data$`var_name`, na.rm = TRUE)
+        qr <- quantile(data$var_name, c(0.25,0.75))
+        Q1 <- qr[[1]] - 1.5*iqr
+        Q3 <- qr[[2]] + 1.5*iqr
+        data <- data %>% filter(var_name < Q3 & var_name > Q1)
+        return(data)
+    }
+
+  # removing outliers form type_confidence
+    chris.sale.total <- outlier.qr(chris.sale.total, type_confidence)
+
+
+```
+  
+```{r corelation, warning=FALSE, message=FALSE, fig.cap="**Plot 2:** Corelation Plot 1", fig.align="center", fig.height=6.5}
+
+# list of numerical varible
+  numerical.varible <- c("start_speed", "px", "pz", "nasty", "inning")
+# colour brewer
+  pitch_col <- brewer.pal(length(unique(chris.sale.total$pitch_type)),"Set1")
+  # pair
+    pairs(chris.sale.total[, numerical.varible], lower.panel = NULL, col = pitch_col)
+  # add ledgend
+    par(xpd = TRUE)
+      legend(x = 0.05, y = 0.5, cex = 1, legend = as.character(levels(chris.sale.total$pitch_type)), 
+             fill = unique(pitch_col))
+    par(xpd = NA)
+    
+```
+
+```{r corelation 2, warning=FALSE, message=FALSE, fig.cap="**Plot 3:** Corelation PLot 2", fig.align="center", fig.height=6.5}
+
+# cor plot    
+  chris.sale.total[, numerical.varible] %>% cor() %>% corrplot(method = "color", type="upper")
+      
+```
+  
+## Data Exploration
+
+```{r frequncey year, warning=FALSE, error=FALSE}
+
+  # Formate data
+    # Pitches by date and type
+      pitch.by.year <- table(year(chris.sale.total$date), chris.sale.total$pitch_type, 
+                             dnn = c("year", "pitch_type")) %>% as.data.frame()
+    # Pitches by date
+      total.pitch.year <- table(year(chris.sale.total$date), dnn = "year") %>% as.data.frame()
+    # Join and order
+      pitch.by.year <- full_join(pitch.by.year, total.pitch.year, by = "year")
+    # Formate and adding percentage as well as year days
+      colnames(pitch.by.year) <- c("year", "pitch_type", "type_freq", "year_freq")
+      pitch.by.year$perc <- pitch.by.year$type_freq / pitch.by.year$year_freq
+      pitch.by.year$year <- pitch.by.year$year %>% as.Date("%Y")
+      pitch.by.year$year <- pitch.by.year$year %>% year()
+    # Removing zeros
+      pitch.by.year <- pitch.by.year %>% filter(type_freq != 0)
+
+```
+
+```{r frequncey year plot, warning=FALSE, error=FALSE,, fig.cap="**Plot 4:** Frequncey By Year", fig.align="center", out.height="100%", out.height="100%"}      
+  
+  # plot
+    ggplot(pitch.by.year, aes(x = year, y = perc)) + 
+      geom_line(aes(colour = pitch_type), size = 1) + 
+      geom_point(fill = "black", aes(colour = pitch_type)) +
+      geom_vline(xintercept = 2016.5, linetype = "dashed", colour = "#666666") +
+      geom_text(x = 2016.7, y = 0.6, label = "traded", colour = "#666666", size = 6) +
+      theme_fivethirtyeight() + scale_colour_brewer(palette = 'Set1')
+
+```
+
+```{r Frequncey day, warning=FALSE, message=FALSE, fig.cap="**Plot 5:** Frequncey By Year Days", fig.align="center", fig.height=8, fig.width=8}
+  
+  # Formate data
+    # Pitches by date and type
+      pitch.by.date <- table(chris.sale.total$date, chris.sale.total$pitch_type, 
+                             dnn = c("date", "pitch_type")) %>% as.data.frame()
+    # Pitches by date
+      total.pitch.date <- table(chris.sale.total$date, dnn = "date") %>% as.data.frame()
+    # Join and order
+      pitch.by.date <- full_join(pitch.by.date, total.pitch.date, by = "date")
+      pitch.by.date <- pitch.by.date %>% arrange(date)
+    # Formate and adding percentage as well as year days
+      colnames(pitch.by.date) <- c("date", "pitch_type", "type_freq", "date_freq")
+      pitch.by.date$perc <- pitch.by.date$type_freq / pitch.by.date$date_freq
+      pitch.by.date$date <- pitch.by.date$date %>% ymd()
+      pitch.by.date$date.yd <- pitch.by.date$date %>% yday()
+    # Nemoving zeros
+      pitch.by.date <- pitch.by.date %>% filter(type_freq != 0)
+
+    
+  # time series (ggplot)
+    ggplot(pitch.by.date, aes(x = date.yd, y = perc)) + 
+      geom_line(aes(colour = pitch_type), size = 1) +
+      theme_grey() + facet_grid(year(date)~pitch_type) + 
+      scale_colour_brewer(palette = 'Set1') + xlab("Year Days") + ylab("Percentage") + 
+      theme_fivethirtyeight()
+
+```
+
+```{r loaction setup, warning=FALSE, message=FALSE}
+
+  # Home plate and ave. strike zone
+    # ave strike zone
+      strike.zone <- geom_rect(aes(xmin = -0.95, xmax = 0.95, ymin = 1.6, ymax = 3.5), fill = NA, 
+                               color = "#ff6116", size = 0.4)
+    # home plate
+      hp.x <- c(-0.95, -0.95, 0, 0.95, 0.95)
+      hp.y <- c(0, -0.475, -0.95, -0.475, 0)
+      hp <- data.frame(hp.x, hp.y)
+    # Join
+      home.plate  <- geom_polygon(data = hp, aes(x = hp.x, y = hp.y), fill = NA, 
+                                  color = "#ff6116", size = 0.5)
+
+```      
+
+```{r location all, warning=FALSE, message=FALSE, fig.cap="**Plot 6:** Location of All Pitches", fig.align="center", out.height="100%", out.height="100%"}
+            
+  # Hex plot
+    # All Pitches
+      ggplot(data = chris.sale.total, aes(x = px, y = pz)) + geom_hex() + coord_fixed() + 
+        strike.zone + home.plate + scale_fill_viridis() + theme_fivethirtyeight()
+
+```
+  
+```{r location pitch type, warning=FALSE, message=FALSE, fig.cap="**Plot 7:** Location by Pitch Type", fig.align="center", out.height="100%", out.height="100%"}
+
+    # facet by pitch type
+      # Finding tally
+        pitch.type.tally <- chris.sale.total %>% group_by(pitch_type) %>% tally()
+      # plot
+         ggplot(data = chris.sale.total, aes(x = px, y = pz)) + geom_hex() + coord_fixed() + 
+           strike.zone + home.plate + scale_fill_viridis() + facet_grid(~pitch_type) + 
+           theme_fivethirtyeight() + 
+           geom_label(data = pitch.type.tally, aes(label=paste('n=', n)), 
+                      x = -4.25, y = 5, vjust = 0, hjust = 0)
+         
+```
+  
+```{r location stand, warning=FALSE, message=FALSE, fig.cap="**Plot 8:** Location by Pitch Type and Stand", fig.align="center", out.height="100%", out.height="100%"}        
+        
+  # stand
+    # stand and pitch type
+      # Finding tally
+         pitch.stand.type.tally <- chris.sale.total %>% group_by(pitch_type, stand) %>% tally()
+      # plot location
+        ggplot(data = chris.sale.total, aes(x = px, y = pz)) + geom_hex() + coord_fixed() + 
+          strike.zone + home.plate + scale_fill_viridis() + facet_grid(stand~pitch_type) + 
+          theme_fivethirtyeight() + 
+          geom_label(data = pitch.stand.type.tally, aes(label=paste('n=', n)),
+                     x = -4.25, y = 5, vjust = 0, hjust = 0)
+``` 
+
+```{r freqency stand, warning=FALSE, message=FALSE, fig.cap="**Plot 9:** Freqcency of Pitches by Stand", fig.align="center", out.height="100%", out.height="100%"}
+      
+  # formate
+    stand.freq <- chris.sale.total %>% group_by(stand) %>% tally()
+    type.stand.freq <- stand.freq %>% full_join(pitch.stand.type.tally, by = "stand")
+    colnames(type.stand.freq) <- c("stand", "stand.total", "pitch_type", "stand_type_total")
+    type.stand.freq$perc <- type.stand.freq$stand_type_total / type.stand.freq$stand.total
+
+  # pitch type freqency plot
+    ggplot(data = type.stand.freq, aes(x = pitch_type, y = perc)) + coord_flip() + 
+      geom_bar(aes(fill = pitch_type), stat = "identity") + facet_grid(.~stand)  +
+      theme_fivethirtyeight() + scale_fill_brewer(palette = 'Set1') + 
+      scale_y_continuous(labels = scales::percent)
+
+```
+    
+```{r location team, warning=FALSE, message=FALSE, fig.cap="**Plot 10:** Location by Pitch Type and Team", fig.align="center"}
+
+  # team
+    # stand and pitch type
+      # Finding tally
+         pitch.team.type.tally <- chris.sale.total %>% group_by(pitch_type, team) %>% tally()
+      # plot
+        ggplot(data = chris.sale.total, aes(x = px, y = pz)) + geom_hex() + coord_fixed() + 
+          strike.zone + home.plate + scale_fill_viridis() + facet_grid(team~pitch_type) + 
+          theme_fivethirtyeight() + 
+          geom_label(data = pitch.team.type.tally, aes(label=paste('n=', n)), 
+                      x = -4.25, y = 5, vjust = 0, hjust = 0)
+
+``` 
+
+```{r outcome, warning=FALSE, fig.cap="**Plot 11:** Outcome by Year", fig.align="center"}
+
+  # formate
+    holder <- chris.sale.total %>% filter(year(date) == 2016 | year(date) == 2017)
+    pitch.outcome.tally <- holder %>% group_by(pitch_outcome, year(date)) %>% tally()
+
+  # plot
+    ggplot(pitch.outcome.tally, aes(x = pitch_outcome, y = n)) + 
+      geom_bar(aes(fill = pitch_outcome), stat = "identity") + coord_flip() + 
+      facet_grid(.~ `year(date)`) + scale_fill_brewer(palette = 'Set3')  + theme_fivethirtyeight() + 
+      geom_label(data = pitch.outcome.tally, aes(label=n))
+
+```
+
+<br>
+<br>
