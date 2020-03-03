@@ -12,7 +12,7 @@ Report **need link**
 ### Visualisation
 In the visualization section, the task was to use this report and story to come up with a visualization that could show the story and aid in the explanation.  
 [Shiny App](https://npennell.shinyapps.io/ChrisSaleProject/)  
-[Report](https://github.com/Npennell96/Chris-Sale-Project/blob/master/Visualisation/Report.pdf)
+[Report](https://github.com/Npennell96/Chris-Sale-Project/blob/master/Visualisation/Report.pdf)  
 [Shiny App Code] **need link**
 
 <br>
