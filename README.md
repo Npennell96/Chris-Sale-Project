@@ -5,7 +5,7 @@ The Project is broken into two parts, the exploration section and the Visualisat
 
 ### Exploration
 In this section, the goal was to find and explore an open source of data and find and explain the story the data is telling. Below links to the report and the code hosted on RPubs.   
-Report **need link**  
+[Report](https://github.com/Npennell96/Chris-Sale-Project/blob/master/Exploration/FIT5147_Data_Exploration_Project_2.pdf) 
 [Raw Code](https://rpubs.com/Npennell/FIT5147_Data_Exploration_Project_Raw_Code)  
 
 
